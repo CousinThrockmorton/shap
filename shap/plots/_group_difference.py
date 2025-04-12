@@ -41,7 +41,7 @@ def group_difference(shap_values, group_mask, feature_names=None, xlabel=None, x
 
     # Fill in any missing feature names
     if feature_names is None:
-        feature_names = ["Feature %d" % i for i in range(shap_values.shape[1])]
+        feature_names = [f"Feature {i}" for i in range(shap_values.shape[1])]
 
     diff = shap_values[group_mask].mean(0) - shap_values[~group_mask].mean(0)
 
