@@ -6,6 +6,7 @@ from ._gradient import GradientExplainer
 from ._kernel import KernelExplainer
 from ._linear import LinearExplainer
 from ._partition import PartitionExplainer
+from ._coalition import CoalitionExplainer
 from ._permutation import PermutationExplainer
 from ._sampling import SamplingExplainer
 from ._tree import TreeExplainer
@@ -19,6 +20,7 @@ Gradient = GradientExplainer
 Kernel = KernelExplainer
 Linear = LinearExplainer
 Partition = PartitionExplainer
+Coalition = CoalitionExplainer
 Permutation = PermutationExplainer
 Sampling = SamplingExplainer
 Tree = TreeExplainer
@@ -32,6 +34,7 @@ __all__ = [
     "KernelExplainer",
     "LinearExplainer",
     "PartitionExplainer",
+    "CoalitionExplainer",
     "PermutationExplainer",
     "SamplingExplainer",
     "TreeExplainer",

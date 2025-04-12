@@ -11,6 +11,7 @@ from .explainers._gradient import GradientExplainer
 from .explainers._kernel import KernelExplainer
 from .explainers._linear import LinearExplainer
 from .explainers._partition import PartitionExplainer
+from .explainers._coalition import CoalitionExplainer
 from .explainers._permutation import PermutationExplainer
 from .explainers._sampling import SamplingExplainer
 from .explainers._tree import TreeExplainer
@@ -108,6 +109,7 @@ __all__ = [
     "KernelExplainer",
     "LinearExplainer",
     "PartitionExplainer",
+    "CoalitionExplainer",
     "PermutationExplainer",
     "SamplingExplainer",
     "TreeExplainer",
