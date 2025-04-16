@@ -10,7 +10,52 @@ from ..utils import MaskedModel, make_masks, safe_isinstance
 
 
 class CoalitionExplainer(Explainer):
-    """A coalition-based explainer that uses Owen values to explain model predictions."""
+    """A coalition-based explainer that uses Winter values, also called recursive Owen values, to explain model predictions.
+    
+    This explainer implements a coalition-based approach to compute feature attributions
+    using Winter values, which extend Shapley values to handle hierarchical feature groupings. 
+    Essentially the attributions are computed using the marginals respecting the partition tree, reducing the complexity of computation.
+    
+    It is particularly useful when features can be grouped into coalitions or
+    hierarchies, in the case of temporal, multimodal data (e.g., demographic features, financial features, etc.). 
+    Textual and image data is not yet implemented.
+
+    The explainer supports both single and multi-output models, and can handle various
+    types of input data through the provided masker.
+
+    Example usage
+    --------
+    >>> import shap
+    >>> import numpy as np
+    >>> import pandas as pd
+    >>> from sklearn.ensemble import RandomForestClassifier
+    >>> from sklearn.datasets import load_iris
+    >>> 
+    >>> # Load data and train model
+    >>> X, y = load_iris(return_X_y=True)
+    >>> model = RandomForestClassifier().fit(X, y)
+    >>> 
+    >>> # Define feature groups
+    >>> coalition_tree = {
+    ...     "Sepal": ["sepal length (cm)", "sepal width (cm)"],
+    ...     "Petal": ["petal length (cm)", "petal width (cm)"]
+    ... }
+    >>> # Define feature names, or you can pass X as a DataFrame
+    >>> feature_names = ["sepal length (cm)", "sepal width (cm)", 
+                 "petal length (cm)", "petal width (cm)"]
+    >>> masker = shap.maskers.Partition(X)
+    >>> masker.feature_names = feature_names
+    >>> 
+    >>> # Create explainer
+    >>> explainer = shap.CoalitionExplainer(
+    ...     model.predict,
+    ...     masker,
+    ...     partition_tree=coalition_tree
+    ... )
+    >>> 
+    >>> # Compute SHAP values
+    >>> shap_values = explainer(X[:5]
+    """
 
     def __init__(
         self,
@@ -24,7 +69,61 @@ class CoalitionExplainer(Explainer):
         partition_tree=None,
         **call_args,
     ):
-        """Initialize the coalition explainer with a model and masker."""
+        """Initialize the coalition explainer with a model and masker.
+
+        Parameters
+        ----------
+        model : callable or shap.models.Model
+            A callable that takes a matrix of samples (# samples x # features) and
+            computes the output of the model for those samples. The output can be a vector
+            (# samples) or a matrix (# samples x # outputs).
+
+        masker : shap.maskers.Masker
+            A masker object that defines how to mask features and compute background
+            values. This should be compatible with the input data format.
+
+        output_names : list of str, optional
+            Names for each of the model outputs. If None, the output names will be
+            determined from the model if possible.
+
+        link : callable, optional
+            The link function used to map between the output units of the model and the
+            SHAP value units. By default, the identity function is used.
+
+        linearize_link : bool, optional
+            If True, the link function is linearized around the expected value to
+            improve the accuracy of the SHAP values. Default is True.
+
+        feature_names : list of str, required 
+            Names for each of the input features. If None, feature names will be
+            determined from the masker if possible.
+
+        partition_tree : dict, required
+            A dictionary defining the hierarchical grouping of features. Each key
+            represents a group name, and its value is either a list of feature names
+            or another dictionary defining subgroups, note all input features must be included in the leaf nodes.
+            For example:
+            {
+                "Demographics": ["Age", "Gender", "Education"],
+                "Financial": {
+                    "Income": ["Salary", "Bonus"],
+                    "Assets": ["Savings", "Investments"]
+                }
+            }
+
+        **call_args : dict, optional
+            Additional arguments to pass to the model when making predictions.
+            These arguments will be passed through to the model's __call__ method.
+
+        Notes
+        -----
+        - The explainer supports both single and multi-output models.
+        - The partition_tree parameter is used to define feature coalitions for
+          computing Owen values, which can provide more meaningful explanations
+          when features are naturally grouped.
+        - The masker should be compatible with the input data format and provide
+          appropriate background values for computing SHAP values.
+        """
         super().__init__(
             model,
             masker,
@@ -154,7 +253,12 @@ class CoalitionExplainer(Explainer):
         mask_results = {}
         for mask in self.unique_masks:
             result = fm(mask.reshape(1, -1))
-            mask_results[tuple(mask)] = np.array(result) if isinstance(result, (list, tuple)) else result
+            # Ensure result is properly shaped for multi-output
+            if isinstance(result, (list, tuple)):
+                result = np.array(result)
+            elif not isinstance(result, np.ndarray):
+                result = np.array([result])
+            mask_results[tuple(mask)] = result
 
         # Step 3: Compute marginals for permutations
         last_key_to_off_indexes, last_key_to_on_indexes, weights = map_combinations_to_unique_masks(
@@ -174,6 +278,9 @@ class CoalitionExplainer(Explainer):
                 on_result = mask_results[tuple(self.unique_masks[on_index])]
 
                 if num_outputs > 1:
+                    # Ensure results are properly shaped for multi-output
+                    off_result = np.asarray(off_result).reshape(-1)
+                    on_result = np.asarray(on_result).reshape(-1)
                     for i in range(num_outputs):
                         marginal_contribution = float((on_result[i] - off_result[i]) * weight)
                         shap_values[feature_name_to_index[last_key], i] += marginal_contribution

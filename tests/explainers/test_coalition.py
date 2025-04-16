@@ -9,6 +9,39 @@ from shap.explainers._coalition import create_partition_hierarchy
 from . import common
 
 
+def test_tabular_coalition_single_output():
+    coalition_tree = {
+        "Demographics": ["Sex", "Age", "Race", "Marital Status", "Education-Num"],
+        "Work": ["Occupation", "Workclass", "Hours per week"],
+        "Finance": ["Capital Gain", "Capital Loss"],
+        "Residence": ["Country"],
+    }
+    model, data = common.basic_xgboost_scenario(100)
+    X, _ = shap.datasets.adult()
+    features = X.columns.tolist()
+    masker = shap.maskers.Partition(data)
+    masker.feature_names = features
+    common.test_additivity(
+        shap.explainers.CoalitionExplainer, model.predict, masker, data, partition_tree=coalition_tree
+    )
+
+def test_tabular_coalition_multiple_output():
+    coalition_tree = {
+        "Demographics": ["Sex", "Age", "Race", "Marital Status", "Education-Num"],
+        "Work": ["Occupation", "Workclass", "Hours per week"],
+        "Finance": ["Capital Gain", "Capital Loss"],
+        "Residence": ["Country"],
+    }
+    model, data = common.basic_xgboost_scenario(100)
+    X, _ = shap.datasets.adult()
+    features = X.columns.tolist()
+    masker = shap.maskers.Partition(data)
+    masker.feature_names = features
+    common.test_additivity(
+        shap.explainers.CoalitionExplainer, model.predict_proba, masker, data, partition_tree=coalition_tree
+    )
+    
+
 def test_tabular_coalition_exact_match():
     model, data = common.basic_xgboost_scenario(50)
     X, _ = shap.datasets.adult()
@@ -48,18 +81,4 @@ def test_tabular_coalition_partition_match():
     assert np.allclose(binary_values.values, binary_winter_values.values)
 
 
-def test_tabular_coalition_single_output():
-    coalition_tree = {
-        "Demographics": ["Sex", "Age", "Race", "Marital Status", "Education-Num"],
-        "Work": ["Occupation", "Workclass", "Hours per week"],
-        "Finance": ["Capital Gain", "Capital Loss"],
-        "Residence": ["Country"],
-    }
-    model, data = common.basic_xgboost_scenario(100)
-    X, _ = shap.datasets.adult()
-    features = X.columns.tolist()
-    masker = shap.maskers.Partition(data)
-    masker.feature_names = features
-    common.test_additivity(
-        shap.explainers.CoalitionExplainer, model.predict, masker, data, partition_tree=coalition_tree
-    )
+
