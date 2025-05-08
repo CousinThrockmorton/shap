@@ -25,6 +25,7 @@ def test_tabular_coalition_single_output():
         shap.explainers.CoalitionExplainer, model.predict, masker, data, partition_tree=coalition_tree
     )
 
+
 def test_tabular_coalition_multiple_output():
     coalition_tree = {
         "Demographics": ["Sex", "Age", "Race", "Marital Status", "Education-Num"],
@@ -40,7 +41,7 @@ def test_tabular_coalition_multiple_output():
     common.test_additivity(
         shap.explainers.CoalitionExplainer, model.predict_proba, masker, data, partition_tree=coalition_tree
     )
-    
+
 
 def test_tabular_coalition_exact_match():
     model, data = common.basic_xgboost_scenario(50)
@@ -79,6 +80,3 @@ def test_tabular_coalition_partition_match():
     binary_winter_values = partition_explainer_b(data)
 
     assert np.allclose(binary_values.values, binary_winter_values.values)
-
-
-

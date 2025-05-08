@@ -142,8 +142,10 @@ class CoalitionExplainer_p(Explainer):
         self.root = Node("Root")
         build_tree(self.partition_tree, self.root)
         self.combinations_list = generate_paths_and_combinations(self.root)
+        
         self.masks, self.keys = create_masks1(self.root, self.masker.feature_names)
         self.masks_dict = dict(zip(self.keys, self.masks))
+        
         self.mask_permutations = create_combined_masks(self.combinations_list, self.masks_dict)
         self.masks_list = [mask for _, mask, _ in self.mask_permutations]
         self.unique_masks_set = set(map(tuple, self.masks_list))

@@ -104,7 +104,7 @@ def xgboost_multiclass_classifier():
 
     X, y = datasets["multiclass"]
 
-    model = xgboost.XGBClassifier(device='cpu')
+    model = xgboost.XGBClassifier(device="cpu")
     model.fit(X, y)
     return model, X, model.predict(X, output_margin=True)
 
@@ -114,7 +114,7 @@ def test_xgboost_cat_unsupported() -> None:
     X, y = shap.datasets.adult()
     X["Workclass"] = X["Workclass"].astype("category")
 
-    clf = xgboost.XGBClassifier(n_estimators=2, enable_categorical=True, device='cpu')
+    clf = xgboost.XGBClassifier(n_estimators=2, enable_categorical=True, device="cpu")
     clf.fit(X, y)
 
     # Tests for both CPU and GPU in one place

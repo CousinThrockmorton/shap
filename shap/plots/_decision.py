@@ -1,9 +1,9 @@
 """Visualize cumulative SHAP values."""
 
-from typing import Union
+from __future__ import annotations
 
 import matplotlib.cm as cm
-import matplotlib.pyplot as pl
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
@@ -56,14 +56,14 @@ def __decision_plot_matplotlib(
     # image size
     row_height = 0.4
     if auto_size_plot:
-        pl.gcf().set_size_inches(8, feature_display_count * row_height + 1.5)
+        plt.gcf().set_size_inches(8, feature_display_count * row_height + 1.5)
 
     # draw vertical line indicating center
-    pl.axvline(x=base_value, color="#999999", zorder=-1)
+    plt.axvline(x=base_value, color="#999999", zorder=-1)
 
     # draw horizontal dashed lines for each feature contribution
     for i in range(1, feature_display_count):
-        pl.axhline(y=i, color=y_demarc_color, lw=0.5, dashes=(1, 5), zorder=-1)
+        plt.axhline(y=i, color=y_demarc_color, lw=0.5, dashes=(1, 5), zorder=-1)
 
     # initialize highlighting
     linestyle = np.array("-", dtype=object)
@@ -74,14 +74,14 @@ def __decision_plot_matplotlib(
         linewidth[highlight] = 2
 
     # plot each observation's cumulative SHAP values.
-    ax = pl.gca()
+    ax = plt.gca()
     ax.set_xlim(xlim)
     m = cm.ScalarMappable(cmap=plot_color)
     m.set_clim(xlim)
     y_pos = np.arange(0, feature_display_count + 1)
     lines = []
     for i in range(cumsum.shape[0]):
-        o = pl.plot(
+        o = plt.plot(
             cumsum[i, :], y_pos, color=m.to_rgba(cumsum[i, -1], alpha), linewidth=linewidth[i], linestyle=linestyle[i]
         )
         lines.append(o[0])
@@ -94,8 +94,8 @@ def __decision_plot_matplotlib(
 
     # if there is a single observation and feature values are supplied, print them.
     if (cumsum.shape[0] == 1) and (features is not None):
-        renderer = pl.gcf().canvas.get_renderer()
-        inverter = pl.gca().transData.inverted()
+        renderer = plt.gcf().canvas.get_renderer()  # type: ignore
+        inverter = plt.gca().transData.inverted()
         y_pos = y_pos + 0.5
         for i in range(feature_display_count):
             v = features[0, i]
@@ -129,10 +129,10 @@ def __decision_plot_matplotlib(
     ax.spines["right"].set_visible(False)
     ax.spines["left"].set_visible(False)
     ax.tick_params(color=axis_color, labelcolor=axis_color, labeltop=True)
-    pl.yticks(np.arange(feature_display_count) + 0.5, feature_names, fontsize=fontsize)
+    plt.yticks(np.arange(feature_display_count) + 0.5, feature_names, fontsize=fontsize)
     ax.tick_params("x", labelsize=11)
-    pl.ylim(0, feature_display_count)
-    pl.xlabel(labels["MODEL_OUTPUT"], fontsize=13)
+    plt.ylim(0, feature_display_count)
+    plt.xlabel(labels["MODEL_OUTPUT"], fontsize=13)
 
     # draw the color bar - must come after axes styling
     if color_bar:
@@ -140,29 +140,29 @@ def __decision_plot_matplotlib(
         m.set_array(np.array([0, 1]))
 
         # place the colorbar
-        pl.ylim(0, feature_display_count + 0.25)
-        ax_cb = ax.inset_axes([xlim[0], feature_display_count, xlim[1] - xlim[0], 0.25], transform=ax.transData)
-        cb = pl.colorbar(m, ticks=[0, 1], orientation="horizontal", cax=ax_cb)
+        plt.ylim(0, feature_display_count + 0.25)
+        ax_cb = ax.inset_axes((xlim[0], feature_display_count, xlim[1] - xlim[0], 0.25), transform=ax.transData)
+        cb = plt.colorbar(m, ticks=[0, 1], orientation="horizontal", cax=ax_cb)
         cb.set_ticklabels([])
         cb.ax.tick_params(labelsize=11, length=0)
         cb.set_alpha(alpha)
-        cb.outline.set_visible(False)
+        cb.outline.set_visible(False)  # type: ignore
 
         # re-activate the main axis for drawing.
-        pl.sca(ax)
+        plt.sca(ax)
 
     if title:
         # TODO decide on style/size
-        pl.title(title)
+        plt.title(title)
 
     if ascending:
-        pl.gca().invert_yaxis()
+        plt.gca().invert_yaxis()
 
     if legend_labels is not None:
         ax.legend(handles=lines, labels=legend_labels, loc=legend_location)
 
     if show:
-        pl.show()
+        plt.show()
 
 
 class DecisionPlotResult:
@@ -210,9 +210,9 @@ class DecisionPlotResult:
 
 
 def decision(
-    base_value,
-    shap_values,
-    features=None,
+    base_value: float | np.ndarray,
+    shap_values: np.ndarray,
+    features: np.ndarray | pd.Series | pd.DataFrame | list | None = None,
     feature_names=None,
     feature_order="importance",
     feature_display_range=None,
@@ -232,7 +232,7 @@ def decision(
     new_base_value=None,
     legend_labels=None,
     legend_location="best",
-) -> Union[DecisionPlotResult, None]:
+) -> DecisionPlotResult | None:
     """Visualize model decisions using cumulative SHAP values.
 
     Each plotted line explains a single model prediction. If a single prediction is plotted, feature values will be
@@ -353,7 +353,7 @@ def decision(
 
     """
     # code taken from force_plot. auto unwrap the base_value
-    if type(base_value) == np.ndarray and len(base_value) == 1:
+    if isinstance(base_value, np.ndarray) and len(base_value) == 1:
         base_value = base_value[0]
 
     if isinstance(base_value, list) or isinstance(shap_values, list):
@@ -409,16 +409,16 @@ def decision(
         triu_count = feature_count * (feature_count - 1) // 2
         idx_diag = np.diag_indices_from(shap_values[0])
         idx_triu = np.triu_indices_from(shap_values[0], 1)
-        a = np.ndarray((observation_count, feature_count + triu_count), shap_values.dtype)
+        a: np.ndarray = np.ndarray((observation_count, feature_count + triu_count), shap_values.dtype)
         a[:, :feature_count] = shap_values[:, idx_diag[0], idx_diag[1]]
         a[:, feature_count:] = shap_values[:, idx_triu[0], idx_triu[1]] * 2
         shap_values = a
         # names
-        a = [None] * shap_values.shape[1]
-        a[:feature_count] = feature_names
+        b: list[str | None] = [None] * shap_values.shape[1]
+        b[:feature_count] = feature_names
         for i, row, col in zip(range(feature_count, shap_values.shape[1]), idx_triu[0], idx_triu[1]):
-            a[i] = f"{feature_names[row]} *\n{feature_names[col]}"
-        feature_names = a
+            b[i] = f"{feature_names[row]} *\n{feature_names[col]}"
+        feature_names = b
         feature_count = shap_values.shape[1]
         features = None  # Can't use feature values for interactions...
 
@@ -456,10 +456,10 @@ def decision(
         # Negative values in a range are not the same as negs in a slice. Consider range(2, -1, -1) == [2, 1, 0],
         # but slice(2, -1, -1) == [] when len(features) > 2. However, range(2, -1, -1) == slice(2, -inf, -1) after
         # clipping.
-        a = np.iinfo(np.integer).min
+        c = np.iinfo(np.integer).min
         feature_display_range = slice(
-            feature_display_range.start if feature_display_range.start >= 0 else a,  # should never happen, but...
-            feature_display_range.stop if feature_display_range.stop >= 0 else a,
+            feature_display_range.start if feature_display_range.start >= 0 else c,  # should never happen, but...
+            feature_display_range.stop if feature_display_range.stop >= 0 else c,
             feature_display_range.step,
         )
 
@@ -472,25 +472,25 @@ def decision(
     # ascending indices and expand by one in the negative direction. why? we are plotting the change in prediction
     # for every feature. this requires that we include the value previous to the first displayed feature
     # (i.e. i_0 - 1 to i_n).
-    a = feature_display_range.indices(feature_count)
+    d = feature_display_range.indices(feature_count)
     ascending = True
-    if a[2] == -1:  # The step
+    if d[2] == -1:  # The step
         ascending = False
-        a = (a[1] + 1, a[0] + 1, 1)
-    feature_display_count = a[1] - a[0]
+        d = (d[1] + 1, d[0] + 1, 1)
+    feature_display_count = d[1] - d[0]
     shap_values = shap_values[:, feature_idx]
-    if a[0] == 0:
-        cumsum = np.ndarray((observation_count, feature_display_count + 1), shap_values.dtype)
+    if d[0] == 0:
+        cumsum: np.ndarray = np.ndarray((observation_count, feature_display_count + 1), shap_values.dtype)
         cumsum[:, 0] = base_value
-        cumsum[:, 1:] = base_value + np.nancumsum(shap_values[:, 0 : a[1]], axis=1)
+        cumsum[:, 1:] = base_value + np.nancumsum(shap_values[:, 0 : d[1]], axis=1)
     else:
-        cumsum = base_value + np.nancumsum(shap_values, axis=1)[:, (a[0] - 1) : a[1]]
+        cumsum = base_value + np.nancumsum(shap_values, axis=1)[:, (d[0] - 1) : d[1]]
 
     # Select and sort feature names and features according to the range selected above
     feature_names = np.array(feature_names)
-    feature_names_display = feature_names[feature_idx[a[0] : a[1]]].tolist()
+    feature_names_display = feature_names[feature_idx[d[0] : d[1]]].tolist()
     feature_names = feature_names[feature_idx].tolist()
-    features_display = None if features is None else features[:, feature_idx[a[0] : a[1]]]
+    features_display = None if features is None else features[:, feature_idx[d[0] : d[1]]]
 
     # throw large data errors
     if not ignore_warnings:
@@ -523,17 +523,17 @@ def decision(
             # Expand [0, 1] limits a little for a visual margin
             xlim = (-0.02, 1.02)
     elif create_xlim:
-        xmin = np.min((cumsum.min(), base_value))
-        xmax = np.max((cumsum.max(), base_value))
+        xmin: float = min((cumsum.min(), base_value))
+        xmax: float = max((cumsum.max(), base_value))
         # create a symmetric axis around base_value
-        a, b = (base_value - xmin), (xmax - base_value)
-        if a > b:
-            xlim = (base_value - a, base_value + a)
+        n, m = (base_value - xmin), (xmax - base_value)
+        if n > m:
+            xlim = (base_value - n, base_value + m)
         else:
-            xlim = (base_value - b, base_value + b)
+            xlim = (base_value - m, base_value + m)
         # Adjust xlim to include a little visual margin.
-        a = (xlim[1] - xlim[0]) * 0.02
-        xlim = (xlim[0] - a, xlim[1] + a)
+        e = (xlim[1] - xlim[0]) * 0.02
+        xlim = (xlim[0] - e, xlim[1] + e)
 
     # Initialize style arguments
     if alpha is None:
@@ -569,7 +569,7 @@ def decision(
     return DecisionPlotResult(base_value_saved, shap_values, feature_names, feature_idx, xlim)
 
 
-def multioutput_decision(base_values, shap_values, row_index, **kwargs) -> Union[DecisionPlotResult, None]:
+def multioutput_decision(base_values, shap_values, row_index, **kwargs) -> DecisionPlotResult | None:
     """Decision plot for multioutput models.
 
     Plots all outputs for a single observation. By default, the plotted base value will be the mean of base_values
@@ -596,6 +596,7 @@ def multioutput_decision(base_values, shap_values, row_index, **kwargs) -> Union
         Returns a DecisionPlotResult object if `return_objects=True`. Returns `None` otherwise (the default).
 
     """
+    # todo: adjust to breaking changes made in #3318
     if not (isinstance(base_values, list) and isinstance(shap_values, list)):
         raise ValueError("The base_values and shap_values args expect lists.")
 

@@ -11,13 +11,13 @@ from ..utils import MaskedModel, make_masks, safe_isinstance
 
 class CoalitionExplainer(Explainer):
     """A coalition-based explainer that uses Winter values, also called recursive Owen values, to explain model predictions.
-    
+
     This explainer implements a coalition-based approach to compute feature attributions
-    using Winter values, which extend Shapley values to handle hierarchical feature groupings. 
+    using Winter values, which extend Shapley values to handle hierarchical feature groupings.
     Essentially the attributions are computed using the marginals respecting the partition tree, reducing the complexity of computation.
-    
+
     It is particularly useful when features can be grouped into coalitions or
-    hierarchies, in the case of temporal, multimodal data (e.g., demographic features, financial features, etc.). 
+    hierarchies, in the case of temporal, multimodal data (e.g., demographic features, financial features, etc.).
     Textual and image data is not yet implemented.
 
     The explainer supports both single and multi-output models, and can handle various
@@ -30,29 +30,29 @@ class CoalitionExplainer(Explainer):
     >>> import pandas as pd
     >>> from sklearn.ensemble import RandomForestClassifier
     >>> from sklearn.datasets import load_iris
-    >>> 
+    >>>
     >>> # Load data and train model
     >>> X, y = load_iris(return_X_y=True)
     >>> model = RandomForestClassifier().fit(X, y)
-    >>> 
+    >>>
     >>> # Define feature groups
     >>> coalition_tree = {
     ...     "Sepal": ["sepal length (cm)", "sepal width (cm)"],
     ...     "Petal": ["petal length (cm)", "petal width (cm)"]
     ... }
     >>> # Define feature names, or you can pass X as a DataFrame
-    >>> feature_names = ["sepal length (cm)", "sepal width (cm)", 
+    >>> feature_names = ["sepal length (cm)", "sepal width (cm)",
                  "petal length (cm)", "petal width (cm)"]
     >>> masker = shap.maskers.Partition(X)
     >>> masker.feature_names = feature_names
-    >>> 
+    >>>
     >>> # Create explainer
     >>> explainer = shap.CoalitionExplainer(
     ...     model.predict,
     ...     masker,
     ...     partition_tree=coalition_tree
     ... )
-    >>> 
+    >>>
     >>> # Compute SHAP values
     >>> shap_values = explainer(X[:5]
     """
@@ -94,7 +94,7 @@ class CoalitionExplainer(Explainer):
             If True, the link function is linearized around the expected value to
             improve the accuracy of the SHAP values. Default is True.
 
-        feature_names : list of str, required 
+        feature_names : list of str, required
             Names for each of the input features. If None, feature names will be
             determined from the masker if possible.
 
